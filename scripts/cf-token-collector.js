@@ -260,69 +260,27 @@ async function processAccount(account, proxy, index, total) {
         { action: 'screenshot', params: { fullPage: true } },
 
         // Fill token name
-        { action: 'evaluate', params: { script: `(() => {
-          var inp = document.querySelector('input[placeholder*=name], input[placeholder*=Name], input[placeholder*=token]');
-          if (!inp) {
-            var allInputs = document.querySelectorAll('input[type=text], input:not([type]):not([hidden])');
-            for (var i = 0; i < allInputs.length; i++) {
-              if (!allInputs[i].closest('[class*=search]')) { inp = allInputs[i]; break; }
-            }
-          }
-          if (inp) {
-            inp.focus();
-            inp.value = '${TOKEN_NAME}';
-            inp.dispatchEvent(new Event('input', {bubbles: true}));
-            inp.dispatchEvent(new Event('change', {bubbles: true}));
-            return JSON.stringify({filled: true});
-          }
-          return JSON.stringify({filled: false});
-        })()` } },
+        { action: 'fill', params: { selector: 'input[name=name]', value: TOKEN_NAME } },
+        { action: 'wait', params: { ms: 1000 } },
 
-        // Change Account → Zone in permissions
-        { action: 'evaluate', params: { script: `(() => {
-          var selects = document.querySelectorAll('select');
-          for (var i = 0; i < selects.length; i++) {
-            var opts = Array.from(selects[i].options).map(function(o) { return o.value; });
-            if (opts.includes('zone') || opts.includes('Zone')) {
-              selects[i].value = opts.find(function(v) { return v.toLowerCase() === 'zone'; }) || 'zone';
-              selects[i].dispatchEvent(new Event('change', {bubbles: true}));
-              return JSON.stringify({changed: true, to: 'zone', selectIndex: i});
-            }
-          }
-          return JSON.stringify({changed: false, note: 'no select with zone option found'});
-        })()` } },
+        // Select Zone (Downshift dropdown #cf-form-input1)
+        { action: 'click', params: { selector: '#cf-form-input1', timeout: 5000 } },
+        { action: 'wait', params: { ms: 2000 } },
+        { action: 'evaluate', params: { script: `(() => { var items = document.querySelectorAll('#downshift-0-menu li'); for (var i = 0; i < items.length; i++) { if (items[i].textContent.trim().toLowerCase() === 'zone') { items[i].click(); return JSON.stringify({ok: true}); } } throw new Error('Zone not found'); })()` } },
         { action: 'wait', params: { ms: 2000 } },
 
-        // Select DNS permission
-        { action: 'evaluate', params: { script: `(() => {
-          var selects = document.querySelectorAll('select');
-          for (var i = 0; i < selects.length; i++) {
-            var opts = Array.from(selects[i].options);
-            var dnsOpt = opts.find(function(o) { return o.text.toLowerCase().includes('dns') || o.value.toLowerCase().includes('dns'); });
-            if (dnsOpt) {
-              selects[i].value = dnsOpt.value;
-              selects[i].dispatchEvent(new Event('change', {bubbles: true}));
-              return JSON.stringify({selected: true, value: dnsOpt.value, text: dnsOpt.text});
-            }
-          }
-          return JSON.stringify({selected: false});
-        })()` } },
+        // Select DNS permission (Downshift combobox #cf-form-input2 — type to filter)
+        { action: 'click', params: { selector: '#cf-form-input2', timeout: 5000 } },
+        { action: 'wait', params: { ms: 1000 } },
+        { action: 'type', params: { selector: '#cf-form-input2', text: 'dns', delay: 100 } },
+        { action: 'wait', params: { ms: 2000 } },
+        { action: 'evaluate', params: { script: `(() => { var items = document.querySelectorAll('#downshift-1-menu li'); for (var i = 0; i < items.length; i++) { if (items[i].textContent.trim().toLowerCase() === 'dns') { items[i].click(); return JSON.stringify({ok: true}); } } throw new Error('DNS not found'); })()` } },
         { action: 'wait', params: { ms: 2000 } },
 
-        // Select Edit permission
-        { action: 'evaluate', params: { script: `(() => {
-          var selects = document.querySelectorAll('select');
-          for (var i = 0; i < selects.length; i++) {
-            var opts = Array.from(selects[i].options);
-            var editOpt = opts.find(function(o) { return o.text.toLowerCase() === 'edit' || o.value.toLowerCase() === 'edit'; });
-            if (editOpt) {
-              selects[i].value = editOpt.value;
-              selects[i].dispatchEvent(new Event('change', {bubbles: true}));
-              return JSON.stringify({selected: true, value: editOpt.value});
-            }
-          }
-          return JSON.stringify({selected: false});
-        })()` } },
+        // Select Edit (React-Select — mousedown on control with "Select..." placeholder)
+        { action: 'evaluate', params: { script: `(() => { var placeholders = document.querySelectorAll('[class*=react-select__placeholder]'); for (var i = 0; i < placeholders.length; i++) { if (placeholders[i].textContent.trim() === 'Select...') { var control = placeholders[i].closest('[class*=react-select__control]'); if (control) { control.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true})); return JSON.stringify({ok: true}); } } } throw new Error('Select... placeholder not found'); })()` } },
+        { action: 'wait', params: { ms: 2000 } },
+        { action: 'evaluate', params: { script: `(() => { var opts = document.querySelectorAll('[class*=react-select__option]'); for (var i = 0; i < opts.length; i++) { if (opts[i].textContent.trim().toLowerCase() === 'edit') { opts[i].click(); return JSON.stringify({ok: true}); } } throw new Error('Edit option not found'); })()` } },
         { action: 'wait', params: { ms: 2000 } },
 
         { action: 'screenshot', params: { fullPage: true } },
@@ -339,25 +297,18 @@ async function processAccount(account, proxy, index, total) {
 
         // Extract the created token
         { action: 'evaluate', params: { script: `(() => {
-          // Look for the token value - usually in a code block or input after creation
-          var codeEl = document.querySelector('code, pre, [class*=token-value], [class*=api-key], input[readonly]');
+          var codeEl = document.querySelector('code, pre, input[readonly], [class*=secret]');
           if (codeEl) {
-            var val = codeEl.value || codeEl.textContent;
-            if (val && val.length > 20) return JSON.stringify({found: true, token: val.trim(), method: 'code-element'});
+            var val = (codeEl.value || codeEl.textContent).trim();
+            if (val.length > 20) return JSON.stringify({found: true, token: val});
           }
-          // Try copy button's adjacent text
-          var copyBtns = document.querySelectorAll('button[class*=copy], [data-testid*=copy], button:has-text("Copy")');
-          for (var i = 0; i < copyBtns.length; i++) {
-            var parent = copyBtns[i].parentElement;
-            var text = parent ? parent.textContent.trim() : '';
-            var match = text.match(/([A-Za-z0-9_-]{40,})/);
-            if (match) return JSON.stringify({found: true, token: match[1], method: 'copy-btn-adjacent'});
+          var spans = document.querySelectorAll('span, p, div, td');
+          for (var i = 0; i < spans.length; i++) {
+            var t = spans[i].textContent.trim();
+            if (t.match(/^[A-Za-z0-9_-]{35,}$/) && spans[i].children.length === 0)
+              return JSON.stringify({found: true, token: t});
           }
-          // Scan for long alphanumeric strings
-          var body = document.body.innerText;
-          var tokenMatch = body.match(/([A-Za-z0-9_-]{40,})/);
-          if (tokenMatch) return JSON.stringify({found: true, token: tokenMatch[1], method: 'body-scan'});
-          return JSON.stringify({found: false, bodyLen: body.length});
+          return JSON.stringify({found: false});
         })()` } },
       ],
     };

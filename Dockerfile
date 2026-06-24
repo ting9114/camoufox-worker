@@ -31,6 +31,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-6 \
     libnss3 \
     libnspr4 \
+    # Additional Firefox runtime deps (often missing in slim images)
+    libfontconfig1 \
+    libfreetype6 \
+    libstdc++6 \
+    libgcc-s1 \
+    libpulse0 \
+    libxss1 \
+    libxtst6 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libxinerama1 \
+    libxrender1 \
+    libegl1 \
+    libgl1 \
+    libglib2.0-0 \
     # Fonts (critical for OS fingerprint consistency)
     fonts-noto \
     fonts-liberation \
@@ -49,7 +64,9 @@ RUN mkdir -p /opt/camoufox \
     && rm /tmp/camoufox.zip \
     && chmod +x /opt/camoufox/camoufox-bin \
     && chmod +x /opt/camoufox/camoufox 2>/dev/null || true \
-    && ls -la /opt/camoufox/
+    && ls -la /opt/camoufox/camoufox-bin \
+    # Verify the binary can actually be loaded (check shared lib deps)
+    && ldd /opt/camoufox/camoufox-bin | grep "not found" && echo "MISSING LIBS ABOVE" && exit 1 || echo "All shared libraries OK"
 
 WORKDIR /app
 

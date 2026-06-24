@@ -11,6 +11,20 @@ app.use(express.json({ limit: '10mb' }));
 // Camoufox binary path (extracted in Docker image)
 const CAMOUFOX_PATH = process.env.CAMOUFOX_PATH || '/opt/camoufox/camoufox-bin';
 
+// Bearer token auth (set ACCESS_KEY env var to enable)
+const ACCESS_KEY = process.env.ACCESS_KEY || '';
+
+function authMiddleware(req, res, next) {
+  if (!ACCESS_KEY) return next(); // no key configured = open (dev mode)
+  if (req.path === '/health') return next(); // health check always open
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  if (token !== ACCESS_KEY) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+  next();
+}
+app.use(authMiddleware);
+
 // session id -> { sessionId, browser, context, page, ttl, timer, fingerprint, ... }
 const sessions = new Map();
 

@@ -2,11 +2,16 @@ FROM node:22-bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ─── System dependencies for Firefox (Camoufox) + Xvfb ───
+# ─── Camoufox version (override with --build-arg) ───
+ARG CAMOUFOX_TAG=v150.0.2-beta.25
+ARG CAMOUFOX_ASSET=camoufox-150.0.2-alpha.26-lin.x86_64.zip
+
+# ─── System dependencies for Firefox (Camoufox) + Xvfb + init ───
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     unzip \
     xvfb \
+    tini \
     # Firefox/GTK runtime dependencies
     libgtk-3-0 \
     libdbus-glib-1-2 \
@@ -31,7 +36,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-6 \
     libnss3 \
     libnspr4 \
-    # Additional Firefox runtime deps (often missing in slim images)
     libfontconfig1 \
     libfreetype6 \
     libstdc++6 \
@@ -54,14 +58,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ─── Download and extract Camoufox binary ───
-ENV CAMOUFOX_VERSION=150.0.2-alpha.26
 ENV CAMOUFOX_PATH=/opt/camoufox/camoufox-bin
 
 RUN mkdir -p /opt/camoufox \
-    && curl -fSL "https://github.com/daijro/camoufox/releases/download/v150.0.2-beta.25/camoufox-${CAMOUFOX_VERSION}-lin.x86_64.zip" \
+    && curl -fSL "https://github.com/daijro/camoufox/releases/download/${CAMOUFOX_TAG}/${CAMOUFOX_ASSET}" \
        -o /tmp/camoufox.zip \
     && unzip -q /tmp/camoufox.zip -d /opt/camoufox \
     && rm /tmp/camoufox.zip \
+    && apt-get purge -y --auto-remove unzip \
     && chmod +x /opt/camoufox/camoufox-bin \
     && chmod +x /opt/camoufox/camoufox 2>/dev/null || true \
     && ls -la /opt/camoufox/camoufox-bin \
@@ -73,11 +77,17 @@ WORKDIR /app
 # Install Node.js deps (skip Playwright browser download — we use Camoufox binary)
 COPY package.json package-lock.json* ./
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-RUN npm install
+RUN npm ci 2>/dev/null || npm install
 
-COPY src/ ./src/
-COPY entrypoint.sh .
+# ─── Non-root user ───
+RUN groupadd -r camoufox && useradd -r -g camoufox -d /app -s /sbin/nologin camoufox \
+    && chown -R camoufox:camoufox /app /opt/camoufox
+
+COPY --chown=camoufox:camoufox src/ ./src/
+COPY --chown=camoufox:camoufox entrypoint.sh .
 RUN chmod +x entrypoint.sh
+
+USER camoufox
 
 EXPOSE 3002
 
@@ -86,4 +96,5 @@ ENV PORT=3002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD curl -fsS "http://localhost:${PORT}/health" || exit 1
 
-ENTRYPOINT ["./entrypoint.sh"]
+# tini as PID 1 — reaps zombie Firefox/Xvfb subprocesses
+ENTRYPOINT ["tini", "--", "./entrypoint.sh"]

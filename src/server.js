@@ -84,6 +84,8 @@ async function createSession(options = {}) {
     env: {
       ...process.env,
       CAMOU_CONFIG: JSON.stringify(fp.config),
+      MOZ_DISABLE_WAYLAND: '1',
+      MOZ_DISABLE_GFX_SANDBOX: '1',
     },
     firefoxUserPrefs: {
       // Privacy/anti-detection prefs
@@ -91,6 +93,11 @@ async function createSession(options = {}) {
       'dom.webdriver.enabled': false,
       'media.peerconnection.enabled': true,
       'network.http.referer.XOriginPolicy': 0,
+      // Fix WASM crash: "wasm_rt_syscall_set_segue_base error: Invalid argument"
+      'javascript.options.wasm_segue': false,
+      // Disable GPU-related features that crash in containers without GPU
+      'gfx.x11-egl.force-enabled': false,
+      'widget.dmabuf.force-enabled': false,
     },
   };
 

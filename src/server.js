@@ -107,14 +107,15 @@ async function createSession(options = {}) {
   const browser = await firefox.launch(launchOptions);
 
   // Create browser context with fingerprint-matched settings
+  // Camoufox's Juggler protocol rejects isMobile/deviceScaleFactor in viewport.
+  // Setting viewport to null lets Camoufox use its own dimensions from CAMOU_CONFIG.
   const contextOptions = {
     userAgent: fp.userAgent,
-    viewport: fp.viewport,
+    viewport: null,
     locale: fp.locale,
     timezoneId: fp.timezone,
     ignoreHTTPSErrors: disableSecurity,
     javaScriptEnabled: true,
-    bypassCSP: disableSecurity,
   };
 
   const context = await browser.newContext(contextOptions);

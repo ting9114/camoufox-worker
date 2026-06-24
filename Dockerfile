@@ -8,9 +8,11 @@ ARG CAMOUFOX_ASSET=camoufox-150.0.2-alpha.26-lin.x86_64.zip
 
 # ─── System dependencies for Firefox (Camoufox) + Xvfb + init ───
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     curl \
     unzip \
     xvfb \
+    xauth \
     tini \
     # Firefox/GTK runtime dependencies
     libgtk-3-0 \
@@ -65,12 +67,13 @@ RUN mkdir -p /opt/camoufox \
        -o /tmp/camoufox.zip \
     && unzip -q /tmp/camoufox.zip -d /opt/camoufox \
     && rm /tmp/camoufox.zip \
-    && apt-get purge -y --auto-remove unzip \
     && chmod +x /opt/camoufox/camoufox-bin \
-    && chmod +x /opt/camoufox/camoufox 2>/dev/null || true \
+    && (chmod +x /opt/camoufox/camoufox 2>/dev/null || true) \
     && ls -la /opt/camoufox/camoufox-bin \
-    # Verify the binary can actually be loaded (check shared lib deps)
-    && ldd /opt/camoufox/camoufox-bin | grep "not found" && echo "MISSING LIBS ABOVE" && exit 1 || echo "All shared libraries OK"
+    && (ldd /opt/camoufox/camoufox-bin | grep -q "not found" && echo "MISSING LIBS" && exit 1 || echo "All shared libraries OK")
+
+# Clean up unzip (separate layer so failures above aren't masked)
+RUN apt-get purge -y --auto-remove unzip && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

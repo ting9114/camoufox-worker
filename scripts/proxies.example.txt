@@ -1,3 +1,11 @@
 # One proxy per line, format: http://username:password@host:port
-http://user1:pass1@proxy1.example.com:10001
-http://user2:pass2@proxy2.example.com:10002
+http://qUESEe6akCrYY1C:RcMqSAg6sI0j1bH@168.235.145.45:46692
+http://lHkhe14Tk8cmieq:Ao2EgHiP7RuDB0W@168.235.146.47:49945
+http://RykYh8PAP7ILwd7:K5ceh5kBzoGb2bC@168.235.147.54:49590
+http://wXIhkewWV6fRdRm:LAv3JknW76jqUBm@198.143.12.190:45415
+http://qvp4DYEY9iymyXl:mQkHvpRZi8VjuvT@198.143.13.69:48261
+http://9joKVcKw0dBnh8w:jHCJikP80Pjz14N@66.128.193.174:45508
+http://EGvpfIT7K6dOhQ0:clMquXFO9G0FCb0@66.128.193.89:43272
+http://eSerh3RkdMxK2WZ:5BfRr4FHwvL7Aln@66.128.194.175:49130
+http://mrzj7mKt0THIZgR:wd1aDATFNkjQBCm@66.128.195.66:48101
+http://LBSSSz9G5V0JEHP:mcK5iWI02S3muSy@91.192.242.167:45534

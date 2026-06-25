@@ -72,6 +72,17 @@ RUN mkdir -p /opt/camoufox \
     && ls -la /opt/camoufox/camoufox-bin \
     && (ldd /opt/camoufox/camoufox-bin | grep -q "not found" && echo "MISSING LIBS" && exit 1 || echo "All shared libraries OK")
 
+# ─── Patch Camoufox config to disable WASM segue at startup ───
+# This MUST be in camoufox.cfg (autoconfig) — firefoxUserPrefs loads too late.
+# The wasm_segue syscall (arch_prctl ARCH_SET_GS) fails on some Linux kernels
+# and inside containers with restricted seccomp profiles.
+RUN echo '' >> /opt/camoufox/camoufox.cfg \
+    && echo '// Container compatibility fixes' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("javascript.options.wasm_segue", false);' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("gfx.x11-egl.force-enabled", false);' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("widget.dmabuf.force-enabled", false);' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("media.hardware-video-decoding.force-enabled", false);' >> /opt/camoufox/camoufox.cfg
+
 # Clean up unzip (separate layer so failures above aren't masked)
 RUN apt-get purge -y --auto-remove unzip && rm -rf /var/lib/apt/lists/*
 

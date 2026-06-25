@@ -51,6 +51,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     libegl1 \
     libgl1 \
+    libgl1-mesa-dri \
+    mesa-utils \
     libglib2.0-0 \
     # Fonts (critical for OS fingerprint consistency)
     fonts-noto \

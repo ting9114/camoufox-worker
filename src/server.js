@@ -86,6 +86,10 @@ async function createSession(options = {}) {
       CAMOU_CONFIG: JSON.stringify(fp.config),
       MOZ_DISABLE_WAYLAND: '1',
       MOZ_DISABLE_GFX_SANDBOX: '1',
+      LIBGL_ALWAYS_SOFTWARE: '1',
+      GALLIUM_DRIVER: 'llvmpipe',
+      MOZ_WEBRENDER: '0',
+      MOZ_ACCELERATED: '0',
     },
     firefoxUserPrefs: {
       // Privacy/anti-detection prefs

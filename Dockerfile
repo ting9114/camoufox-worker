@@ -83,7 +83,15 @@ RUN echo '' >> /opt/camoufox/camoufox.cfg \
     && echo 'defaultPref("javascript.options.wasm_segue", false);' >> /opt/camoufox/camoufox.cfg \
     && echo 'defaultPref("gfx.x11-egl.force-enabled", false);' >> /opt/camoufox/camoufox.cfg \
     && echo 'defaultPref("widget.dmabuf.force-enabled", false);' >> /opt/camoufox/camoufox.cfg \
-    && echo 'defaultPref("media.hardware-video-decoding.force-enabled", false);' >> /opt/camoufox/camoufox.cfg
+    && echo 'defaultPref("media.hardware-video-decoding.force-enabled", false);' >> /opt/camoufox/camoufox.cfg \
+    && echo '// Force WebGL on even without hardware GPU (uses Mesa llvmpipe)' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("webgl.force-enabled", true);' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("webgl.disabled", false);' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("webgl.enable-webgl2", true);' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("webgl.force-layers-readback", true);' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("layers.acceleration.force-enabled", true);' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("gfx.canvas.azure.backends", "skia");' >> /opt/camoufox/camoufox.cfg \
+    && echo 'defaultPref("gfx.content.azure.backends", "skia");' >> /opt/camoufox/camoufox.cfg
 
 # Clean up unzip (separate layer so failures above aren't masked)
 RUN apt-get purge -y --auto-remove unzip && rm -rf /var/lib/apt/lists/*

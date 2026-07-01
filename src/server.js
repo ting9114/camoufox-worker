@@ -1,6 +1,8 @@
 import express from 'express';
 import { firefox } from 'playwright';
 import { randomUUID } from 'crypto';
+import { mkdirSync, writeFileSync, unlinkSync } from 'fs';
+import { join } from 'path';
 import { resolveAdPatterns } from './ad-patterns.js';
 import { solveTurnstile, hasTurnstile } from './cf-solver.js';
 import { generateFingerprint, fingerprintSummary } from './fingerprint.js';
@@ -303,9 +305,18 @@ async function executeStep(session, step) {
       return { set: params.cookies.length };
     case 'getLocalStorage':
       return { value: await page.evaluate((k) => localStorage.getItem(k), params.key) };
-    case 'uploadFile':
-      await page.setInputFiles(params.selector, params.files);
-      return { uploaded: params.files };
+    case 'uploadFile': {
+      const { selector, filename = 'upload.csv', base64: fileBase64, force = true } = params;
+      if (!fileBase64) throw new Error('uploadFile: base64 param is required');
+      const uploadDir = '/tmp/bw-uploads';
+      mkdirSync(uploadDir, { recursive: true });
+      const filePath = join(uploadDir, filename);
+      writeFileSync(filePath, Buffer.from(fileBase64, 'base64'));
+      await page.setInputFiles(selector, filePath, { force });          // ← force: true added
+      try { await page.dispatchEvent(selector, 'change', {}, { force }); } catch {} // ← added
+      try { unlinkSync(filePath); } catch {}
+      return { uploaded: filename };
+    }
 
     /* ──────── Cloudflare-specific actions ──────── */
 

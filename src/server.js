@@ -8,7 +8,7 @@ import { solveTurnstile, hasTurnstile } from './cf-solver.js';
 import { generateFingerprint, fingerprintSummary } from './fingerprint.js';
 
 const app = express();
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 
 // Camoufox binary path (extracted in Docker image)
 const CAMOUFOX_PATH = process.env.CAMOUFOX_PATH || '/opt/camoufox/camoufox-bin';
